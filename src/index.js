@@ -16,6 +16,9 @@ function checksExistsUserAccount(request, response, next) {
   if (!username) {
     return response.status(400).json({ error: 'Invalid username' });
   }
+  if (!user) {
+    return response.status(404).json({ error: 'User not found' });
+  }
   request.username = username;
   next();
 }
@@ -56,8 +59,8 @@ app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
   const { title, deadline } = request.body;
   const { id } = request.params;
   const { username } = request;
-  if (!title && !deadline) {
-    return response.status(400).json({ error: 'Title and deadline are required' });
+  if (!title && !deadline && !id) {
+    return response.status(400).json({ error: 'Id, title and deadline are required' });
   }
 
   const { todos } = users.find(user => user.username === username);
@@ -71,11 +74,34 @@ app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { id } = request.params;
+  const { username } = request;
+  if (!id) {
+    return response.status(400).json({ error: 'Id is required' });
+  }
+
+  const user = users.find(user => user.username === username);
+  const todo = user.todos.find(todo => todo.id === id);
+  if (!todo) {
+    return response.status(404).json({ error: `Todo doesn't exist` })
+  }
+  todo.done = true;
+  return response.status(200).json(todo);
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { id } = request.params;
+  const { username } = request;
+  if (!id) {
+    return response.status(400).json({ error: 'Id is required' });
+  }
+  const user = users.find(user => user.username === username);
+  const todo = user.todos.find(todo => todo.id === id);
+  if (!todo) {
+    return response.status(404).json({ error: `Todo doesn't exist` })
+  }
+  user.todos.splice(todo, 1);
+  return response.status(204).send();
 });
 
 module.exports = app;
